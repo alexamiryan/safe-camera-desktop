@@ -15,7 +15,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -53,22 +53,28 @@ public class SafeCamera extends ApplicationWindow {
 	@Override
 	protected Control createContents(final Composite parent) {
 		final Composite container = new Composite(parent, SWT.NONE);
-		container.setLayout(new FillLayout(SWT.HORIZONTAL));
+		container.setLayout(new GridLayout(2, false));
 		
-		Composite composite = new Composite(container, SWT.NONE);
-		composite.setBounds(0, 0, 634, 364);
-				composite.setLayout(new GridLayout(2, false));
+		text = new Text(container, SWT.BORDER);
+		GridData gridData = new GridData();
+		gridData.horizontalAlignment = SWT.FILL;
+		gridData.grabExcessHorizontalSpace = true;
+		text.setLayoutData(gridData);
+		text.setEchoChar('*');
 		
-				text = new Text(composite, SWT.BORDER);
-				text.setEchoChar('*');
-				Button btnOpen = new Button(composite, SWT.NONE);
-				btnOpen.setText("Open");
-				
-						
-						imgLabel = new Label(composite, SWT.NONE);
-						new Label(composite, SWT.NONE);
-
+		Button btnOpen = new Button(container, SWT.NONE);
+		btnOpen.setText("Open");
+		
 		btnOpen.addSelectionListener(openSelect());
+				
+		imgLabel = new Label(container, SWT.NONE);
+		gridData = new GridData();
+		gridData.horizontalSpan = 2;
+		gridData.horizontalAlignment = SWT.FILL;
+		gridData.grabExcessHorizontalSpace = true;
+		gridData.verticalAlignment = SWT.FILL;
+		gridData.grabExcessVerticalSpace = true;
+		imgLabel.setLayoutData(gridData);
 
 		return container;
 	}
