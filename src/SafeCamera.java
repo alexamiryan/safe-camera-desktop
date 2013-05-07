@@ -39,6 +39,7 @@ public class SafeCamera extends ApplicationWindow {
 	private ProgressBar progressBar;
 
 	private Image currentImage = null;
+	
 
 	/**
 	 * Create the application window.
@@ -80,7 +81,6 @@ public class SafeCamera extends ApplicationWindow {
 		btnDecrypt.setText("Decrypt");
 		
 		progressBar = new ProgressBar(container, SWT.NONE);
-		progressBar.setVisible(false);
 		gridData = new GridData();
 		gridData.horizontalSpan = 4;
 		gridData.horizontalAlignment = SWT.FILL;
@@ -123,47 +123,67 @@ public class SafeCamera extends ApplicationWindow {
 							Display.getCurrent().asyncExec(new Runnable(){
 		                        @Override
 								public void run() {
-		                        	try {
-			                        	String enteredPassword = new String(text.getText());
-										String enteredPasswordHash = AESCrypt.byteToHex(AESCrypt.getHash(enteredPassword));
-										AESCrypt crypt = new AESCrypt(enteredPasswordHash);
+		                        	
+			                        	final String enteredPassword = new String(text.getText());
 										
-										FileInputStream input = new FileInputStream(file);
 										
-										AESCrypt.CryptoProgress progress = new CryptoProgress(input.getChannel().size()) {
+										Thread decrypt = new Thread(new Runnable() {
+											
 											@Override
-											public void setProgress(long pCurrent) {
-												super.setProgress(pCurrent);
-												int newProgress = this.getProgressPercents();
-												//progress.setProgress(newProgress);
-												
+											public void run() {
+												try {
+													String enteredPasswordHash = AESCrypt.byteToHex(AESCrypt.getHash(enteredPassword));
+													AESCrypt crypt = new AESCrypt(enteredPasswordHash);
+													
+													FileInputStream input = new FileInputStream(file);
+													
+													AESCrypt.CryptoProgress cryptProgress = new CryptoProgress(input.getChannel().size()) {
+														@Override
+														public void setProgress(long pCurrent) {
+															super.setProgress(pCurrent);
+															final int newProgress = this.getProgressPercents();
+															//progressBar.setProgress(newProgress);
+															//System.out.println(String.valueOf(newProgress));
+															if (Display.getCurrent().isDisposed()) return;
+															Display.getCurrent().asyncExec(new Runnable() {
+																@Override
+																public void run() {
+																if (progressBar.isDisposed ()) return;
+																	progressBar.setSelection(newProgress);
+																}
+															});
+															
+														}
+													};
+													
+													byte[] decryptedImage = crypt.decrypt(input, cryptProgress);
+													
+													if (decryptedImage != null) {
+														InputStream istream = new ByteArrayInputStream(decryptedImage);
+				
+														ImageData imageData = new ImageData(istream);
+														currentImage = new Image(Display.getDefault(), imageData);
+														if (imgLabel != null) {
+															imgLabel.setImage(resize(currentImage, imgLabel.getSize().x, imgLabel.getSize().y));
+														}
+													}
+													else {
+														System.out.println("Unable to decrypt");
+													}
+												}
+					        					catch (FileNotFoundException e1) {
+					        						e1.printStackTrace();
+					        					}
+					        					catch (AESCryptException e2) {
+					        						e2.printStackTrace();
+					        					}
+												catch (IOException e) {
+													e.printStackTrace();
+												}
 											}
-										};
-										
-										byte[] decryptedImage = crypt.decrypt(input, progress);
-	
-										if (decryptedImage != null) {
-											InputStream istream = new ByteArrayInputStream(decryptedImage);
-	
-											ImageData imageData = new ImageData(istream);
-											currentImage = new Image(Display.getDefault(), imageData);
-											if (imgLabel != null) {
-												imgLabel.setImage(resize(currentImage, imgLabel.getSize().x, imgLabel.getSize().y));
-											}
-										}
-										else {
-											System.out.println("Unable to decrypt");
-										}
-		                        	}
-		        					catch (FileNotFoundException e1) {
-		        						e1.printStackTrace();
-		        					}
-		        					catch (AESCryptException e2) {
-		        						e2.printStackTrace();
-		        					}
-									catch (IOException e) {
-										e.printStackTrace();
-									}
+										});
+										decrypt.run();
+		                        	
 		                        }
 		                    });
 
