@@ -2,6 +2,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Security;
@@ -37,9 +38,9 @@ public class SafeCamera extends ApplicationWindow {
 	private Text text;
 	private Label imgLabel = null;
 	private ProgressBar progressBar;
+	private File currentFile = null;
 
 	private Image currentImage = null;
-	
 
 	/**
 	 * Create the application window.
@@ -79,8 +80,10 @@ public class SafeCamera extends ApplicationWindow {
 
 		Button btnDecrypt = new Button(container, SWT.NONE);
 		btnDecrypt.setText("Decrypt");
-		
+		btnDecrypt.addSelectionListener(decryptCurrent());
+
 		progressBar = new ProgressBar(container, SWT.NONE);
+		progressBar.setVisible(false);
 		gridData = new GridData();
 		gridData.horizontalSpan = 4;
 		gridData.horizontalAlignment = SWT.FILL;
@@ -117,87 +120,122 @@ public class SafeCamera extends ApplicationWindow {
 				FileDialog dialog = new FileDialog(getShell(), SWT.NULL);
 				String path = dialog.open();
 				if (path != null) {
-					
-						final File file = new File(path);
-						if (file.isFile()) {
-							Display.getCurrent().asyncExec(new Runnable(){
-		                        @Override
-								public void run() {
-		                        	
-			                        	final String enteredPassword = new String(text.getText());
-										
-										
-										Thread decrypt = new Thread(new Runnable() {
-											
-											@Override
-											public void run() {
-												try {
-													String enteredPasswordHash = AESCrypt.byteToHex(AESCrypt.getHash(enteredPassword));
-													AESCrypt crypt = new AESCrypt(enteredPasswordHash);
-													
-													FileInputStream input = new FileInputStream(file);
-													
-													AESCrypt.CryptoProgress cryptProgress = new CryptoProgress(input.getChannel().size()) {
-														@Override
-														public void setProgress(long pCurrent) {
-															super.setProgress(pCurrent);
-															final int newProgress = this.getProgressPercents();
-															//progressBar.setProgress(newProgress);
-															//System.out.println(String.valueOf(newProgress));
-															if (Display.getCurrent().isDisposed()) return;
-															Display.getCurrent().asyncExec(new Runnable() {
-																@Override
-																public void run() {
-																if (progressBar.isDisposed ()) return;
-																	progressBar.setSelection(newProgress);
-																}
-															});
-															
-														}
-													};
-													
-													byte[] decryptedImage = crypt.decrypt(input, cryptProgress);
-													
-													if (decryptedImage != null) {
-														InputStream istream = new ByteArrayInputStream(decryptedImage);
-				
-														ImageData imageData = new ImageData(istream);
-														currentImage = new Image(Display.getDefault(), imageData);
-														if (imgLabel != null) {
-															imgLabel.setImage(resize(currentImage, imgLabel.getSize().x, imgLabel.getSize().y));
-														}
-													}
-													else {
-														System.out.println("Unable to decrypt");
-													}
-												}
-					        					catch (FileNotFoundException e1) {
-					        						e1.printStackTrace();
-					        					}
-					        					catch (AESCryptException e2) {
-					        						e2.printStackTrace();
-					        					}
-												catch (IOException e) {
-													e.printStackTrace();
-												}
-											}
-										});
-										decrypt.run();
-		                        	
-		                        }
-		                    });
+					currentFile = new File(path);
+					if (currentFile.isFile()) {
 
-						}
-						else {
+						final String enteredPassword = new String(text.getText());
 
-						}
-				
+						Thread decrypt = new Thread(new Runnable() {
+
+							@Override
+							public void run() {
+								try {
+									String enteredPasswordHash = AESCrypt.byteToHex(AESCrypt.getHash(enteredPassword));
+									AESCrypt crypt = new AESCrypt(enteredPasswordHash);
+
+									FileInputStream input = new FileInputStream(currentFile);
+
+									AESCrypt.CryptoProgress cryptProgress = new CryptoProgress(input.getChannel().size()) {
+										@Override
+										public void setProgress(long pCurrent) {
+											super.setProgress(pCurrent);
+											progressBar.setSelection(this.getProgressPercents());
+										}
+									};
+
+									byte[] decryptedImage = crypt.decrypt(input, cryptProgress);
+
+									if (decryptedImage != null) {
+										InputStream istream = new ByteArrayInputStream(decryptedImage);
+
+										ImageData imageData = new ImageData(istream);
+										currentImage = new Image(Display.getDefault(), imageData);
+										if (imgLabel != null) {
+											imgLabel.setImage(resize(currentImage, imgLabel.getSize().x, imgLabel.getSize().y));
+											progressBar.setVisible(false);
+										}
+									}
+									else {
+										System.out.println("Unable to decrypt");
+									}
+								}
+								catch (FileNotFoundException e1) {
+									e1.printStackTrace();
+								}
+								catch (AESCryptException e2) {
+									e2.printStackTrace();
+								}
+								catch (IOException e) {
+									e.printStackTrace();
+								}
+							}
+						});
+						progressBar.setVisible(true);
+						decrypt.run();
+					}
 				}
 			}
 		};
 	}
-	
-	
+
+	private SelectionAdapter decryptCurrent() {
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
+				String path = dialog.open();
+				if (path != null) {
+
+					final File destFile = new File(path);
+					if (currentFile!= null && currentFile.isFile() && currentFile.exists()) {
+
+						final String enteredPassword = new String(text.getText());
+
+						Thread decryptFile = new Thread(new Runnable() {
+
+							@Override
+							public void run() {
+								try {
+									String enteredPasswordHash = AESCrypt.byteToHex(AESCrypt.getHash(enteredPassword));
+									AESCrypt crypt = new AESCrypt(enteredPasswordHash);
+
+									// String destFileName =
+									// Helpers.decryptFilename(activity,
+									// file.getName());
+
+									FileInputStream inputStream = new FileInputStream(currentFile);
+									FileOutputStream outputStream = new FileOutputStream(destFile);
+
+									AESCrypt.CryptoProgress cryptProgress = new CryptoProgress(inputStream.getChannel().size()) {
+										@Override
+										public void setProgress(long pCurrent) {
+											super.setProgress(pCurrent);
+											progressBar.setSelection(this.getProgressPercents());
+										}
+									};
+
+									crypt.decrypt(inputStream, outputStream, cryptProgress);
+									progressBar.setVisible(false);
+
+								}
+								catch (FileNotFoundException e1) {
+									e1.printStackTrace();
+								}
+								catch (AESCryptException e2) {
+									e2.printStackTrace();
+								}
+								catch (IOException e) {
+									e.printStackTrace();
+								}
+							}
+						});
+						progressBar.setVisible(true);
+						decryptFile.run();
+					}
+				}
+			}
+		};
+	}
 
 	/**
 	 * Create the actions.
