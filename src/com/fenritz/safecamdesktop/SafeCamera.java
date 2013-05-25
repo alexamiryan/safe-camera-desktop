@@ -1,12 +1,12 @@
 package com.fenritz.safecamdesktop;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -293,9 +293,27 @@ public class SafeCamera extends ApplicationWindow {
 						byte[] decryptedImage = SafeCamera.crypto.decrypt(input, cryptProgress);
 
 						if (decryptedImage != null) {
-							InputStream istream = new ByteArrayInputStream(decryptedImage);
-
+							ByteArrayInputStream istream = new ByteArrayInputStream(decryptedImage);
 							ImageData imageData = new ImageData(istream);
+							
+							Integer rotation = Helpers.getAltExifRotation(new BufferedInputStream(new ByteArrayInputStream(decryptedImage)));
+
+							int finalRotation = 0;
+							
+							switch(rotation){
+								case 90:
+									finalRotation = SWT.RIGHT;
+									break;
+								case 180:
+									finalRotation = SWT.DOWN;
+									break;
+								case 270:
+									finalRotation = SWT.LEFT;
+									break;
+							}
+							if(finalRotation != 0){
+								imageData = Helpers.rotate(imageData, finalRotation);
+							}
 							currentImage = new Image(Display.getDefault(), imageData);
 							if (imgLabel != null) {
 								imgLabel.setImage(resize(currentImage, imgLabel.getSize().x, imgLabel.getSize().y));
@@ -318,6 +336,7 @@ public class SafeCamera extends ApplicationWindow {
 						e.printStackTrace();
 					}
 					catch (Exception e) {
+						e.printStackTrace();
 						SafeCamera.crypto = null;
 						ensurePassword(true);
 					}
