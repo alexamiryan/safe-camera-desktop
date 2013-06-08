@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.prefs.Preferences;
 
 import org.apache.sanselan.ImageReadException;
 import org.apache.sanselan.common.IImageMetadata;
@@ -199,5 +200,19 @@ public class Helpers {
 		}
 		// destBytesPerLine is used as scanlinePad to ensure that no padding is required
 		return new ImageData(width, height, srcData.depth, srcData.palette, srcData.scanlinePad, newData);
+	}
+	
+	public static String getMainFolderPath(){
+		Preferences prefs = Preferences.userNodeForPackage(com.fenritz.safecamdesktop.SafeCamera.class);
+		String defaultPath = System.getProperty( "user.home" ) + System.getProperty("file.separator") + "SafeCamera";
+		
+		return prefs.get(SafeCamera.PREF_MAINDIR, defaultPath);
+	}
+	
+	public static String getOutputFolderPath(){
+		Preferences prefs = Preferences.userNodeForPackage(com.fenritz.safecamdesktop.SafeCamera.class);
+		String defaultPath = System.getProperty( "user.home" ) + System.getProperty("file.separator") + "SafeCamera Decrypted";
+		
+		return prefs.get(SafeCamera.PREF_OUTDIR, defaultPath);
 	}
 }

@@ -51,6 +51,9 @@ public class SafeCamera extends ApplicationWindow {
 	private File currentFile = null;
 	private String currentPath = null;
 	private final ArrayList<File> files = new ArrayList<File>();
+	
+	public final static String PREF_MAINDIR = "maindir";
+	public final static String PREF_OUTDIR = "outdir";
 
 	private Image currentImage = null;
 
@@ -563,6 +566,10 @@ public class SafeCamera extends ApplicationWindow {
 		decryptItem.setText("Decrypt");
 		decryptAsItem = new MenuItem(fileMenu, SWT.NONE);
 		decryptAsItem.setText("Decrypt As...");
+		
+		MenuItem prefsItem = new MenuItem(fileMenu, SWT.NONE);
+		prefsItem.setText("Preferences");
+				
 		MenuItem exitItem = new MenuItem(fileMenu, SWT.NONE);
 		exitItem.setText("Exit");
 
@@ -571,7 +578,14 @@ public class SafeCamera extends ApplicationWindow {
 		
 		decryptItem.setEnabled(false);
 		decryptAsItem.setEnabled(false);
-
+		
+		prefsItem.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				new PreferencesDialog(getShell()).open();
+			}
+		});
+		
 		exitItem.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
