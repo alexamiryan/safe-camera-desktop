@@ -59,7 +59,7 @@ public class SafeCamera extends ApplicationWindow {
 
 	public static AESCrypt crypto = null;
 
-	private Menu menu, fileMenu, editMenu, viewMenu;
+	private Menu menu;
 	private MenuItem decryptItem, decryptAsItem;
 
 	/**
@@ -355,6 +355,7 @@ public class SafeCamera extends ApplicationWindow {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				FileDialog dialog = new FileDialog(getShell(), SWT.NULL);
+				dialog.setFilterPath(Helpers.getMainFolderPath());
 				String path = dialog.open();
 				if (path != null) {
 					currentFile = new File(path);
@@ -365,15 +366,86 @@ public class SafeCamera extends ApplicationWindow {
 			}
 		};
 	}
+	
+	private SelectionAdapter encryptSelect() {
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				FileDialog dialog = new FileDialog(getShell(), SWT.MULTI);
+				dialog.setFilterPath(Helpers.getMainFolderPath());
+				String path = dialog.open();
+				if (path != null) {
+					final File outputFolder = new File(Helpers.getMainFolderPath());
+					if(!outputFolder.exists()){
+						outputFolder.mkdirs();
+					}
+					
+					String[] files = dialog.getFileNames();
+					if (files.length > 0 && ensurePassword()) {
+						for(String filePath : files){
+							final File fileToEncrypt = new File(dialog.getFilterPath() + "/" + filePath);
+							final String destinationPath = Helpers.getNewDestinationPath(outputFolder.getPath(), fileToEncrypt.getName(), SafeCamera.crypto);
+							if(destinationPath.length() - outputFolder.getPath().length() > 256){
+								Helpers.errorDialog(getShell(), "Sorry filename "+fileToEncrypt.getName()+" is too long");
+							}
+							else{
+								if (fileToEncrypt.isFile()) {
+									Thread encryptFile = new Thread(new Runnable() {
+										@Override
+										public void run() {
+											try {
+												FileInputStream inputStream = new FileInputStream(fileToEncrypt);
+												FileOutputStream outputStream = new FileOutputStream(destinationPath);
+	
+												AESCrypt.CryptoProgress cryptProgress = new CryptoProgress(inputStream.getChannel().size()) {
+													@Override
+													public void setProgress(long pCurrent) {
+														super.setProgress(pCurrent);
+														progressBar.setSelection(this.getProgressPercents());
+													}
+												};
+	
+												SafeCamera.crypto.encrypt(inputStream, outputStream, cryptProgress);
+												progressBar.setVisible(false);
+	
+											}
+											catch (FileNotFoundException e1) {
+												e1.printStackTrace();
+											}
+											catch (IOException e) {
+												e.printStackTrace();
+											}
+										}
+									});
+									progressBar.setVisible(true);
+									encryptFile.run();
+								}
+							}
+						}
+					}
+				}
+			}
+		};
+	}
 
-	private SelectionAdapter decryptCurrent() {
+	private SelectionAdapter decryptCurrent(final boolean toDefaultLocation) {
 		return new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (currentFile != null && currentFile.isFile() && currentFile.exists()) {
-					FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
-					dialog.setFileName(Helpers.decryptFilename(currentFile.getName()));
-					String path = dialog.open();
+					String path;
+					if(toDefaultLocation){
+						path = Helpers.ensureLastSlash(Helpers.getOutputFolderPath()) + Helpers.decryptFilename(currentFile.getName());
+						File decDir = new File(Helpers.getOutputFolderPath());
+						if(!decDir.exists()){
+							decDir.mkdirs();
+						}
+					}
+					else{
+						FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
+						dialog.setFileName(Helpers.decryptFilename(currentFile.getName()));
+						path = dialog.open();
+					}
 					if (path != null) {
 
 						final File destFile = new File(path);
@@ -554,14 +626,23 @@ public class SafeCamera extends ApplicationWindow {
 		menu = new Menu(shell, SWT.BAR);
 		MenuItem fileItem = new MenuItem(menu, SWT.CASCADE);
 		fileItem.setText("File");
+		
+		MenuItem toolsItem = new MenuItem(menu, SWT.CASCADE);
+		toolsItem.setText("Tools");
 
 		MenuItem helpItem = new MenuItem(menu, SWT.CASCADE);
 		helpItem.setText("Help");
 
 		Menu fileMenu = new Menu(menu);
 		fileItem.setMenu(fileMenu);
+		
+		Menu toolsMenu = new Menu(menu);
+		toolsItem.setMenu(toolsMenu);
+		
 		MenuItem openItem = new MenuItem(fileMenu, SWT.NONE);
 		openItem.setText("Open...");
+		openItem.addSelectionListener(openSelect());
+		
 		decryptItem = new MenuItem(fileMenu, SWT.NONE);
 		decryptItem.setText("Decrypt");
 		decryptAsItem = new MenuItem(fileMenu, SWT.NONE);
@@ -573,11 +654,15 @@ public class SafeCamera extends ApplicationWindow {
 		MenuItem exitItem = new MenuItem(fileMenu, SWT.NONE);
 		exitItem.setText("Exit");
 
-		openItem.addSelectionListener(openSelect());
-		decryptAsItem.addSelectionListener(decryptCurrent());
+		decryptItem.addSelectionListener(decryptCurrent(true));
+		decryptAsItem.addSelectionListener(decryptCurrent(false));
 		
 		decryptItem.setEnabled(false);
 		decryptAsItem.setEnabled(false);
+		
+		MenuItem encryptItem = new MenuItem(toolsMenu, SWT.NONE);
+		encryptItem.setText("Encrypt Files...");
+		encryptItem.addSelectionListener(encryptSelect());
 		
 		prefsItem.addSelectionListener(new SelectionAdapter() {
 			@Override

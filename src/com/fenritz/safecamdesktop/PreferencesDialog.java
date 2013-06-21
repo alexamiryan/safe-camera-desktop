@@ -6,6 +6,8 @@ import java.util.prefs.Preferences;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
@@ -71,6 +73,18 @@ public class PreferencesDialog extends Dialog {
 				}
 			}
 		});
+		mainFolder.addKeyListener(new KeyListener() {
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				mainFolderPath = mainFolder.getText();
+			}
+			
+			@Override
+			public void keyPressed(KeyEvent e) {
+				mainFolderPath = mainFolder.getText();
+			}
+		});
 		mainFolderBrowse.setText("Browse");
 		
 		Label lblOutputFolder = new Label(container, SWT.NONE);
@@ -96,6 +110,18 @@ public class PreferencesDialog extends Dialog {
 				}
 			}
 		});
+		outputFolder.addKeyListener(new KeyListener() {
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				outFolderPath = outputFolder.getText();
+			}
+			
+			@Override
+			public void keyPressed(KeyEvent e) {
+				
+			}
+		});
 		outputFolderBrowse.setText("Browse");
 		getShell().setText("Preferences");
 		return container;
@@ -111,7 +137,6 @@ public class PreferencesDialog extends Dialog {
 		button.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				System.out.println(mainFolder.getText());
 				Preferences prefs = Preferences.userNodeForPackage(com.fenritz.safecamdesktop.SafeCamera.class);
 				prefs.put(SafeCamera.PREF_MAINDIR, mainFolderPath);
 				prefs.put(SafeCamera.PREF_OUTDIR, outFolderPath);
