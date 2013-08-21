@@ -255,7 +255,7 @@ public class SafeCamera extends ApplicationWindow {
 	@SuppressWarnings("unchecked")
 	private void fillFilesList() {
 		if (currentFile != null && currentFile.isFile() && currentFile.exists()) {
-			if (currentPath == null || !currentPath.equals(currentFile.getParent())) {
+			//if (currentPath == null || !currentPath.equals(currentFile.getParent())) {
 				File dir = new File(currentFile.getParent());
 				File[] folderFiles = dir.listFiles();
 
@@ -272,7 +272,7 @@ public class SafeCamera extends ApplicationWindow {
 				}
 
 				currentPath = currentFile.getParent();
-			}
+			//}
 		}
 	}
 
