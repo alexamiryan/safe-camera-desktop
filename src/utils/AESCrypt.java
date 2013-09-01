@@ -106,6 +106,7 @@ public class AESCrypt {
 			decryptionCipher.init(Cipher.DECRYPT_MODE, key, ivParamSpec);
 		}
 		catch (Exception e) {
+			System.out.println(e.getMessage());
 			return false;
 		}
 		

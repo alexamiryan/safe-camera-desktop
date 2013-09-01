@@ -44,6 +44,7 @@ import utils.AESCrypt;
 import utils.AESCrypt.CryptoProgress;
 import utils.AESCryptException;
 import utils.Helpers;
+import org.eclipse.wb.swt.SWTResourceManager;
 
 public class SafeCamera extends ApplicationWindow {
 	private Label imgLabel = null;
@@ -254,7 +255,7 @@ public class SafeCamera extends ApplicationWindow {
 	@SuppressWarnings("unchecked")
 	private void fillFilesList() {
 		if (currentFile != null && currentFile.isFile() && currentFile.exists()) {
-			if (currentPath == null || !currentPath.equals(currentFile.getParent())) {
+			//if (currentPath == null || !currentPath.equals(currentFile.getParent())) {
 				File dir = new File(currentFile.getParent());
 				File[] folderFiles = dir.listFiles();
 
@@ -271,7 +272,7 @@ public class SafeCamera extends ApplicationWindow {
 				}
 
 				currentPath = currentFile.getParent();
-			}
+			//}
 		}
 	}
 
@@ -617,6 +618,7 @@ public class SafeCamera extends ApplicationWindow {
 	 */
 	@Override
 	protected void configureShell(final Shell shell) {
+		shell.setImage(SWTResourceManager.getImage(SafeCamera.class, "/com/fenritz/safecamdesktop/safe-camera64.png"));
 		super.configureShell(shell);
 		shell.setText("SafeCamera Desktop");
 		shell.setSize(640, 480);
