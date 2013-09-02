@@ -39,12 +39,12 @@ import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.wb.swt.SWTResourceManager;
 
 import utils.AESCrypt;
 import utils.AESCrypt.CryptoProgress;
 import utils.AESCryptException;
 import utils.Helpers;
-import org.eclipse.wb.swt.SWTResourceManager;
 
 public class SafeCamera extends ApplicationWindow {
 	private Label imgLabel = null;
@@ -632,8 +632,8 @@ public class SafeCamera extends ApplicationWindow {
 		MenuItem toolsItem = new MenuItem(menu, SWT.CASCADE);
 		toolsItem.setText("Tools");
 
-		MenuItem helpItem = new MenuItem(menu, SWT.CASCADE);
-		helpItem.setText("Help");
+		/*MenuItem helpItem = new MenuItem(menu, SWT.CASCADE);
+		helpItem.setText("Help");*/
 
 		Menu fileMenu = new Menu(menu);
 		fileItem.setMenu(fileMenu);

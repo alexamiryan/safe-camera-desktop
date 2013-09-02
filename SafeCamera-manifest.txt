@@ -8,4 +8,6 @@ Class-Path: swt.jar
   bcprov.jar
   metadata-extractor.jar
   Sanselan.jar
+  US_export_policy.jar
+  local_policy.jar
 Main-Class: com.fenritz.safecamdesktop.SafeCamera
