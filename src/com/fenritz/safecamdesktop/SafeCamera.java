@@ -351,6 +351,15 @@ public class SafeCamera extends ApplicationWindow {
 		}
 	}
 
+	private SelectionAdapter aboutSelect() {
+		return new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				new AboutDialog(getShell()).open();
+			}
+		};
+	}
+	
 	private SelectionAdapter openSelect() {
 		return new SelectionAdapter() {
 			@Override
@@ -632,14 +641,21 @@ public class SafeCamera extends ApplicationWindow {
 		MenuItem toolsItem = new MenuItem(menu, SWT.CASCADE);
 		toolsItem.setText("Tools");
 
-		/*MenuItem helpItem = new MenuItem(menu, SWT.CASCADE);
-		helpItem.setText("Help");*/
+		MenuItem helpItem = new MenuItem(menu, SWT.CASCADE);
+		helpItem.setText("Help");
 
 		Menu fileMenu = new Menu(menu);
 		fileItem.setMenu(fileMenu);
 		
 		Menu toolsMenu = new Menu(menu);
 		toolsItem.setMenu(toolsMenu);
+		
+		Menu helpMenu = new Menu(menu);
+		helpItem.setMenu(helpMenu);
+		
+		MenuItem aboutItem = new MenuItem(helpMenu, SWT.NONE);
+		aboutItem.setText("About");
+		aboutItem.addSelectionListener(aboutSelect());
 		
 		MenuItem openItem = new MenuItem(fileMenu, SWT.NONE);
 		openItem.setText("Open...");
